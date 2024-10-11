@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AstNode {
     Number(f64),
     BinaryOp(Box<AstNode>, Operator, Box<AstNode>),

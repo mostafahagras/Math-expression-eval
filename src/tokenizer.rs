@@ -44,16 +44,34 @@ impl<'a> Tokenizer<'a> {
         self.skip_whitespace();
         match self.peek() {
             Some(character) => match character {
-                '+' => {self.advance(); Some(Token::Plus)},
-                '-' => {self.advance(); Some(Token::Minus)},
-                '*' => {self.advance(); Some(Token::Times)},
-                '/' => {self.advance(); Some(Token::Divide)},
-                '(' => {self.advance(); Some(Token::LParen)},
-                ')' => {self.advance(); Some(Token::RParen)},
+                '+' => {
+                    self.advance();
+                    Some(Token::Plus)
+                }
+                '-' => {
+                    self.advance();
+                    Some(Token::Minus)
+                }
+                '*' => {
+                    self.advance();
+                    Some(Token::Times)
+                }
+                '/' => {
+                    self.advance();
+                    Some(Token::Divide)
+                }
+                '(' => {
+                    self.advance();
+                    Some(Token::LParen)
+                }
+                ')' => {
+                    self.advance();
+                    Some(Token::RParen)
+                }
                 ch if ch.is_digit(10) => Some(self.parse_number()),
-                ch => panic!("Unknown character {ch} @ {}", self.position)
+                ch => panic!("Unknown character {ch} @ {}", self.position),
             },
-            None => None
+            None => None,
         }
     }
     fn parse_number(&mut self) -> Token {
@@ -71,5 +89,136 @@ impl<'a> Tokenizer<'a> {
         }
         let number: f64 = number_string.parse().expect("Failed to ");
         Token::Number(number)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn tokenize(input: &str) -> Vec<Token> {
+        let mut tokenizer = Tokenizer::new(input);
+        tokenizer.tokens()
+    }
+
+    #[test]
+    fn test_tokenize_simple_expression() {
+        let input = "1 + 2";
+        let expected = vec![Token::Number(1.0), Token::Plus, Token::Number(2.0)];
+        assert_eq!(tokenize(input), expected);
+    }
+
+    #[test]
+    fn test_tokenize_with_parentheses() {
+        let input = "(1 + 2) * 3";
+        let expected = vec![
+            Token::LParen,
+            Token::Number(1.0),
+            Token::Plus,
+            Token::Number(2.0),
+            Token::RParen,
+            Token::Times,
+            Token::Number(3.0),
+        ];
+        assert_eq!(tokenize(input), expected);
+    }
+
+    #[test]
+    fn test_tokenize_with_division_and_subtraction() {
+        let input = "10 / 2 - 3";
+        let expected = vec![
+            Token::Number(10.0),
+            Token::Divide,
+            Token::Number(2.0),
+            Token::Minus,
+            Token::Number(3.0),
+        ];
+        assert_eq!(tokenize(input), expected);
+    }
+
+    #[test]
+    fn test_implicit_multiplication_number_and_parenthesis() {
+        let input = "2(3 + 4)";
+        let expected = vec![
+            Token::Number(2.0),
+            Token::LParen,
+            Token::Number(3.0),
+            Token::Plus,
+            Token::Number(4.0),
+            Token::RParen,
+        ];
+        assert_eq!(tokenize(input), expected);
+    }
+
+    #[test]
+    fn test_implicit_multiplication_between_parentheses() {
+        let input = "(2)(3 + 4)";
+        let expected = vec![
+            Token::LParen,
+            Token::Number(2.0),
+            Token::RParen,
+            Token::LParen,
+            Token::Number(3.0),
+            Token::Plus,
+            Token::Number(4.0),
+            Token::RParen,
+        ];
+        assert_eq!(tokenize(input), expected);
+    }
+
+    #[test]
+    fn test_tokenize_complex_expression() {
+        let input = "3 + 4 * 2 / (1 - 5)";
+        let expected = vec![
+            Token::Number(3.0),
+            Token::Plus,
+            Token::Number(4.0),
+            Token::Times,
+            Token::Number(2.0),
+            Token::Divide,
+            Token::LParen,
+            Token::Number(1.0),
+            Token::Minus,
+            Token::Number(5.0),
+            Token::RParen,
+        ];
+        assert_eq!(tokenize(input), expected);
+    }
+
+    #[test]
+    fn test_implicit_multiplication_complex_case() {
+        let input = "(1 + 2)(3 + 4)";
+        let expected = vec![
+            Token::LParen,
+            Token::Number(1.0),
+            Token::Plus,
+            Token::Number(2.0),
+            Token::RParen,
+            Token::LParen,
+            Token::Number(3.0),
+            Token::Plus,
+            Token::Number(4.0),
+            Token::RParen,
+        ];
+        assert_eq!(tokenize(input), expected);
+    }
+
+    #[test]
+    fn test_tokenize_decimal_numbers() {
+        let input = "1.5 + 2.25";
+        let expected = vec![Token::Number(1.5), Token::Plus, Token::Number(2.25)];
+        assert_eq!(tokenize(input), expected);
+    }
+
+    #[test]
+    fn test_tokenize_negative_numbers() {
+        let input = "-3 + 2";
+        let expected = vec![
+            Token::Minus, // Unary minus
+            Token::Number(3.0),
+            Token::Plus,
+            Token::Number(2.0),
+        ];
+        assert_eq!(tokenize(input), expected);
     }
 }

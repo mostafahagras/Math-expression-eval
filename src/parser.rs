@@ -64,3 +64,143 @@ impl Parser {
         operands.pop().expect("Failed to parse expression")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{ast::Operator, tokenizer::Tokenizer};
+    fn parse_expression(input: &str) -> AstNode {
+        let mut tokenizer = Tokenizer::new(input);
+        let tokens = tokenizer.tokens();
+        let mut parser = Parser::new(tokens);
+        parser.parse()
+    }
+
+    #[test]
+    fn test_simple_addition() {
+        let input = "1 + 2";
+        let expected = AstNode::BinaryOp(
+            Box::new(AstNode::Number(1.0)),
+            Operator::Add,
+            Box::new(AstNode::Number(2.0)),
+        );
+        assert_eq!(parse_expression(input), expected);
+    }
+
+    #[test]
+    fn test_addition_and_multiplication() {
+        let input = "1 + 2 * 3";
+        let expected = AstNode::BinaryOp(
+            Box::new(AstNode::Number(1.0)),
+            Operator::Add,
+            Box::new(AstNode::BinaryOp(
+                Box::new(AstNode::Number(2.0)),
+                Operator::Multiply,
+                Box::new(AstNode::Number(3.0)),
+            )),
+        );
+        assert_eq!(parse_expression(input), expected);
+    }
+
+    #[test]
+    fn test_parentheses() {
+        let input = "(1 + 2) * 3";
+        let expected = AstNode::BinaryOp(
+            Box::new(AstNode::BinaryOp(
+                Box::new(AstNode::Number(1.0)),
+                Operator::Add,
+                Box::new(AstNode::Number(2.0)),
+            )),
+            Operator::Multiply,
+            Box::new(AstNode::Number(3.0)),
+        );
+        assert_eq!(parse_expression(input), expected);
+    }
+
+    #[test]
+    fn test_division_and_subtraction() {
+        let input = "10 / 2 - 3";
+        let expected = AstNode::BinaryOp(
+            Box::new(AstNode::BinaryOp(
+                Box::new(AstNode::Number(10.0)),
+                Operator::Divide,
+                Box::new(AstNode::Number(2.0)),
+            )),
+            Operator::Subtract,
+            Box::new(AstNode::Number(3.0)),
+        );
+        assert_eq!(parse_expression(input), expected);
+    }
+
+    #[test]
+    fn test_implicit_multiplication_between_number_and_parenthesis() {
+        let input = "2(3 + 4)";
+        let expected = AstNode::BinaryOp(
+            Box::new(AstNode::Number(2.0)),
+            Operator::Multiply,
+            Box::new(AstNode::BinaryOp(
+                Box::new(AstNode::Number(3.0)),
+                Operator::Add,
+                Box::new(AstNode::Number(4.0)),
+            )),
+        );
+        assert_eq!(parse_expression(input), expected);
+    }
+
+    #[test]
+    fn test_implicit_multiplication_between_parentheses() {
+        let input = "(2)(3 + 4)";
+        let expected = AstNode::BinaryOp(
+            Box::new(AstNode::Number(2.0)),
+            Operator::Multiply,
+            Box::new(AstNode::BinaryOp(
+                Box::new(AstNode::Number(3.0)),
+                Operator::Add,
+                Box::new(AstNode::Number(4.0)),
+            )),
+        );
+        assert_eq!(parse_expression(input), expected);
+    }
+
+    #[test]
+    fn test_nested_parentheses() {
+        let input = "((1 + 2) * (3 + 4))";
+        let expected = AstNode::BinaryOp(
+            Box::new(AstNode::BinaryOp(
+                Box::new(AstNode::Number(1.0)),
+                Operator::Add,
+                Box::new(AstNode::Number(2.0)),
+            )),
+            Operator::Multiply,
+            Box::new(AstNode::BinaryOp(
+                Box::new(AstNode::Number(3.0)),
+                Operator::Add,
+                Box::new(AstNode::Number(4.0)),
+            )),
+        );
+        assert_eq!(parse_expression(input), expected);
+    }
+
+    #[test]
+    fn test_complex_expression() {
+        let input = "3 + 4 * 2 / (1 - 5)";
+        let expected = AstNode::BinaryOp(
+            Box::new(AstNode::Number(3.0)),
+            Operator::Add,
+            Box::new(AstNode::BinaryOp(
+                Box::new(AstNode::BinaryOp(
+                    Box::new(AstNode::Number(4.0)),
+                    Operator::Multiply,
+                    Box::new(AstNode::Number(2.0)),
+                )),
+                Operator::Divide,
+                Box::new(AstNode::BinaryOp(
+                    Box::new(AstNode::Number(1.0)),
+                    Operator::Subtract,
+                    Box::new(AstNode::Number(5.0)),
+                )),
+            )),
+        );
+        assert_eq!(parse_expression(input), expected);
+    }
+}
