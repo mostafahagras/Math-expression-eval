@@ -15,7 +15,7 @@ impl Parser {
     pub fn parse(&mut self) -> AstNode {
         let mut operands: Vec<AstNode> = vec![];
         let mut operators: Vec<&Token> = vec![];
-        for token in &self.tokens {
+        for (i, token) in self.tokens.iter().enumerate() {
             if token.is_number() {
                 operands.push(AstNode::Number(token.value()));
             } else if token.is_operator() {
@@ -36,6 +36,9 @@ impl Parser {
                 }
                 operators.push(token);
             } else if token.is_lparen() {
+                if i > 0 && (self.tokens[i - 1].is_number()) {
+                    operators.push(&Token::Times);
+                }
                 operators.push(token);
             } else if token.is_rparen() {
                 while let Some(last_operator) = operators.pop() {
@@ -50,6 +53,11 @@ impl Parser {
                         Box::new(right),
                     );
                     operands.push(ast_node);
+                }
+                if let Some(next_token) = self.tokens.get(i + 1) {
+                    if next_token.is_number() || next_token.is_lparen() {
+                        operators.push(&Token::Times);
+                    }
                 }
             } else {
                 unimplemented!("For additional features")

@@ -24,7 +24,7 @@ impl Token {
     pub fn value(&self) -> f64 {
         match self {
             Self::Number(n) => *n,
-            _ => panic!("Token::value called on a non-number token")
+            _ => panic!("Token::value called on a non-number token"),
         }
     }
 
@@ -42,7 +42,7 @@ impl Token {
             Self::Minus => Operator::Subtract,
             Self::Times => Operator::Multiply,
             Self::Divide => Operator::Divide,
-            _ => panic!("Token::operator called with a non-operator token")
+            _ => panic!("Token::operator called with a non-operator token"),
         }
     }
 
